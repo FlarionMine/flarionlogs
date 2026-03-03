@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Панель логов FlarionMine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      min-height: 100vh;
+      display: flex;
+    }
+    .sidebar {
+      width: 240px;
+      background: #16181b;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .brand {
+      font-weight: 700;
+      letter-spacing: .12em;
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #f9fafb;
+      text-align: center;
+    }
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      font-weight: 400;
+      font-size: 10px;
+      letter-spacing: .24em;
+      color: #9ca3af;
+    }
+    .nav-section-title {
+      margin-top: 8px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: #6b7280;
+    }
+    .nav-link {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .nav-link.active {
+      background: #831b1b;
+      color: #fef3c7;
+      font-weight: 500;
+    }
+    .nav-link:hover:not(.active) {
+      background: #111827;
+      color: #f9fafb;
+    }
+    .main {
+      flex: 1;
+      padding: 24px 32px;
+      background: #e5e7eb;
+      overflow: auto;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .page-title { font-size: 18px; font-weight: 600; color: #111827; }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      color: #6b7280;
+      font-size: 11px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 16px 18px;
+      border: 1px solid #e5e7eb;
+    }
+    .card h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #111827; }
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .filters input,
+    .filters select {
+      background: #ffffff;
+      border-radius: 3px;
+      border: 1px solid #d1d5db;
+      color: #111827;
+      padding: 4px 6px;
+      font-size: 13px;
+      min-width: 0;
+    }
+    button {
+      border: none;
+      border-radius: 3px;
+      padding: 6px 12px;
+      background: #ef4444;
+      color: #ffffff;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button.secondary {
+      background: #374151;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: auto;
+    }
+    th, td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    th {
+      color: #6b7280;
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: none;
+      letter-spacing: 0;
+      background: #f9fafb;
+      user-select: none;
+      position: relative;
+    }
+    #usersTable.hide-actions .col-actions,
+    #usersTable.hide-actions td:nth-child(5) { display: none !important; }
+    .col-resize-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 5px;
+      height: 100%;
+      cursor: col-resize;
+      background: linear-gradient(to right, transparent, rgba(148,163,184,0.8), transparent);
+    }
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+    tbody tr:hover {
+      background: #e5e7eb;
+    }
+    .muted { color: #6b7280; }
+    .status-ok { color: #16a34a; font-weight: 500; }
+    .status-fail { color: #b91c1c; font-weight: 500; }
+    .layout-auth {
+      max-width: 420px;
+      margin: 60px auto;
+    }
+    .auth-card {
+      background: #ffffff;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+      padding: 22px 24px 20px;
+      text-align: left;
+    }
+    .auth-header-brand {
+      text-align: center;
+      margin-bottom: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .auth-header-sub {
+      text-align: center;
+      margin-bottom: 16px;
+      font-size: 11px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .field label {
+      font-size: 13px;
+      color: #4b5563;
+    }
+    .field input {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 3px;
+      padding: 7px 8px;
+      color: #111827;
+      font-size: 14px;
+    }
+    .link-nick {
+      color: #dc2626;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .ip-toggle,
+    .cmd-toggle {
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .error {
+      color: #b91c1c;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }
+      .main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="sidebar" style="display:none">
+    <div class="brand">
+      FLARIONMINE
+      <small>TECH SECTION</small>
+    </div>
+    <div>
+      <div class="nav-section-title">Основные действия</div>
+      <div class="nav-link active" data-page="logs">Логи [grief-1]</div>
+      <div class="nav-link" data-page="players">Поиск игрока [grief-1]</div>
+    </div>
+    <div>
+      <div class="nav-section-title">Администрация</div>
+      <div class="nav-link" data-page="users">Список авторизированных пользователей</div>
+    </div>
+    <div style="margin-top:auto;font-size:12px;color:#64748b" id="currentUser"></div>
+  </div>
+  <main class="main">
+    <div id="authView" class="layout-auth" style="display:none">
+      <div class="auth-card">
+        <div class="auth-header-brand">FLARIONMINE</div>
+        <div class="auth-header-sub">ЛОГИ СЕРВЕРА</div>
+        <h2 id="authTitle">Вход в панель</h2>
+        <div id="authError" class="error" style="display:none"></div>
+
+        <div id="authLoginFields">
+          <div class="field">
+            <label>Имя пользователя</label>
+            <input id="loginUsername" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label>Пароль</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" />
+          </div>
+          <button id="loginBtn">Войти</button>
+        </div>
+
+        <div id="authRegisterFields" style="display:none">
+          <div class="field">
+            <label>Имя пользователя</label>
+            <input id="regUsername" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input id="regEmail" type="email" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label>Пароль</label>
+            <input id="regPassword" type="password" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label>Повторите пароль</label>
+            <input id="regPassword2" type="password" autocomplete="new-password" />
+          </div>
+          <button id="registerBtn">Зарегистрироваться</button>
+        </div>
+
+        <div style="margin-top:12px;font-size:13px;color:#9ca3af">
+          <span id="toggleAuthMode" style="cursor:pointer;text-decoration:underline">
+            Нет аккаунта? Зарегистрироваться
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div id="appView" style="display:none">
+      <div id="noAccessView" class="layout-auth" style="display:none">
+        <div class="auth-card">
+          <div class="auth-header-brand">FLARIONMINE</div>
+          <div class="auth-header-sub">ОГРАНИЧЕННЫЙ ДОСТУП</div>
+          <p class="muted" style="font-size:13px;margin-top:8px">
+            Ваш аккаунт не имеет прав для просмотра логов. Обратитесь к владельцу панели, чтобы выдать роль <b>logs</b> или <b>owner</b>.
+          </p>
+          <button id="logoutBtnNoAccess" style="margin-top:12px">Выйти</button>
+        </div>
+      </div>
+
+      <div id="protectedView">
+        <div class="toolbar">
+          <div>
+            <div class="page-title" id="pageTitle">Логи</div>
+            <div class="badge">ИСКЛЮЧИТЕЛЬНО ПО GRIEF-1</div>
+          </div>
+          <div>
+            <button class="secondary" id="logoutBtn">Выйти</button>
+          </div>
+        </div>
+
+        <section id="pageLogs">
+          <div class="card">
+            <h2>Логи команд</h2>
+          <div class="filters">
+            <input id="filterPlayer" placeholder="Игрок" />
+            <input id="filterKeyword" placeholder="Ключевое слово / время" style="min-width:180px" />
+            <select id="filterSource">
+              <option value="">Источник: все</option>
+              <option value="player">Игрок</option>
+              <option value="console">Консоль</option>
+            </select>
+            <button id="reloadLogs">Применить фильтры</button>
+          </div>
+          <div style="overflow:auto;max-height:480px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Дата<span class="col-resize-handle"></span></th>
+                  <th>Источник<span class="col-resize-handle"></span></th>
+                  <th>Игрок<span class="col-resize-handle"></span></th>
+                  <th>Команда<span class="col-resize-handle"></span></th>
+                  <th>IP<span class="col-resize-handle"></span></th>
+                </tr>
+              </thead>
+              <tbody id="logsBody"></tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+
+        <section id="pagePlayers" style="display:none">
+          <div class="card">
+            <h2>Игроки</h2>
+          <div class="filters">
+            <input id="playerSearch" placeholder="Ник игрока" />
+            <button id="searchPlayerBtn">Найти игрока</button>
+          </div>
+          <div style="overflow:auto;max-height:480px">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID<span class="col-resize-handle"></span></th>
+                  <th>Ник<span class="col-resize-handle"></span></th>
+                  <th>Первый вход<span class="col-resize-handle"></span></th>
+                  <th>Последний вход<span class="col-resize-handle"></span></th>
+                  <th>Последний IP<span class="col-resize-handle"></span></th>
+                </tr>
+              </thead>
+              <tbody id="playersBody"></tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+
+        <section id="pageUsers" style="display:none">
+          <div class="card">
+            <h2>Список пользователей панели</h2>
+            <p class="muted" style="margin-top:0;font-size:13px">Редактирование доступно только для роли OWNER.</p>
+            <div style="overflow:auto;max-height:320px">
+              <table id="usersTable">
+                <thead>
+                  <tr>
+                    <th>ID<span class="col-resize-handle"></span></th>
+                    <th>Имя<span class="col-resize-handle"></span></th>
+                    <th>Роль<span class="col-resize-handle"></span></th>
+                    <th>Создан<span class="col-resize-handle"></span></th>
+                    <th class="col-actions">Действия<span class="col-resize-handle"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+
+            <div id="userEditPanel" style="margin-top:16px;display:none">
+              <h3 style="margin:0 0 8px;font-size:14px">Редактирование пользователя</h3>
+              <div class="field">
+                <label>Имя</label>
+                <input id="editUsername" disabled />
+              </div>
+              <div class="field">
+                <label>Роль</label>
+                <select id="editRole">
+                  <option value="user">user</option>
+                  <option value="logs">logs</option>
+                  <option value="owner">owner</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Новый пароль (опционально)</label>
+                <input id="editPassword" type="password" />
+              </div>
+              <button id="saveUserBtn">Сохранить изменения</button>
+              <div id="userEditMsg" class="error" style="display:none;margin-top:6px"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const authView = document.getElementById('authView');
+    const appView = document.getElementById('appView');
+    const authError = document.getElementById('authError');
+    const currentUserEl = document.getElementById('currentUser');
+    const pageTitle = document.getElementById('pageTitle');
+    const sidebarEl = document.getElementById('sidebar');
+    const noAccessView = document.getElementById('noAccessView');
+    const protectedView = document.getElementById('protectedView');
+
+    function formatDateTime(ts) {
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return ts;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function highlight(text, query) {
+      if (!query) return text;
+      const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safeQuery, 'gi');
+      return text.replace(re, (m) => `<span style="color:#dc2626;font-weight:600">${m}</span>`);
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || res.statusText);
+      }
+      return res.json();
+    }
+
+    async function bootstrap() {
+      try {
+        const me = await api('/api/me');
+        showApp(me);
+      } catch {
+        showAuth();
+      }
+    }
+
+    function showAuth() {
+      authView.style.display = 'block';
+      appView.style.display = 'none';
+      currentUserEl.textContent = '';
+      sidebarEl.style.display = 'none';
+    }
+
+    function showApp(me) {
+      currentUser = me;
+      const hasLogsAccess = me.role === 'logs' || me.role === 'owner';
+      authView.style.display = 'none';
+      appView.style.display = 'block';
+      sidebarEl.style.display = hasLogsAccess ? 'flex' : 'none';
+      currentUserEl.textContent = `Вы вошли как ${me.username} (${me.role})`;
+
+      if (hasLogsAccess) {
+        noAccessView.style.display = 'none';
+        protectedView.style.display = 'block';
+        loadLogs();
+        loadPlayers();
+        loadUsers();
+      } else {
+        protectedView.style.display = 'none';
+        noAccessView.style.display = 'block';
+      }
+    }
+
+    let authMode = 'login'; // or 'register'
+
+    function updateAuthMode() {
+      const title = document.getElementById('authTitle');
+      const loginFields = document.getElementById('authLoginFields');
+      const regFields = document.getElementById('authRegisterFields');
+      const toggle = document.getElementById('toggleAuthMode');
+
+      if (authMode === 'login') {
+        title.textContent = 'Вход в панель';
+        loginFields.style.display = 'block';
+        regFields.style.display = 'none';
+        toggle.textContent = 'Нет аккаунта? Зарегистрироваться';
+      } else {
+        title.textContent = 'Регистрация';
+        loginFields.style.display = 'none';
+        regFields.style.display = 'block';
+        toggle.textContent = 'Уже есть аккаунт? Войти';
+      }
+    }
+
+    document.getElementById('toggleAuthMode').onclick = () => {
+      authMode = authMode === 'login' ? 'register' : 'login';
+      authError.style.display = 'none';
+      updateAuthMode();
+    };
+
+    document.getElementById('loginBtn').onclick = async () => {
+      authError.style.display = 'none';
+      try {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const user = await api('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password })
+        });
+        showApp(user);
+      } catch (e) {
+        authError.textContent = 'Ошибка входа: ' + e.message;
+        authError.style.display = 'block';
+      }
+    };
+
+    document.getElementById('registerBtn').onclick = async () => {
+      authError.style.display = 'none';
+      try {
+        const username = document.getElementById('regUsername').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const password2 = document.getElementById('regPassword2').value;
+        if (!username || !password) {
+          throw new Error('Заполните имя пользователя и пароль');
+        }
+        if (password !== password2) {
+          throw new Error('Пароли не совпадают');
+        }
+        const user = await api('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ username, email, password })
+        });
+        showApp(user);
+      } catch (e) {
+        authError.textContent = 'Ошибка регистрации: ' + e.message;
+        authError.style.display = 'block';
+      }
+    };
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await api('/api/auth/logout', { method: 'POST' });
+      showAuth();
+    };
+    document.getElementById('logoutBtnNoAccess').onclick = async () => {
+      await api('/api/auth/logout', { method: 'POST' });
+      showAuth();
+    };
+
+    async function loadLogs() {
+      const player = document.getElementById('filterPlayer').value.trim();
+      const source = document.getElementById('filterSource').value;
+      const keyword = document.getElementById('filterKeyword').value.trim();
+      const params = new URLSearchParams();
+      if (player) params.set('player', player);
+      if (source) params.set('source', source);
+      if (keyword) params.set('q', keyword);
+      const rows = await api('/api/logs?' + params.toString());
+      const body = document.getElementById('logsBody');
+      body.innerHTML = rows
+        .map((r) => {
+          const date = formatDateTime(r.ts);
+          const src = r.source === 'player' ? 'Игрок' : r.source;
+          const rawCommand = r.command || '';
+          const safeCommand = rawCommand.replace(/</g, '&lt;');
+          const cmdLower = rawCommand.toLowerCase();
+          const isAuthCmd =
+            cmdLower.startsWith('/login') ||
+            cmdLower.startsWith('/l ') ||
+            cmdLower === '/l' ||
+            cmdLower.startsWith('/register') ||
+            cmdLower.startsWith('/reg ') ||
+            cmdLower === '/reg';
+
+          let commandCell;
+          if (isAuthCmd) {
+            if (isOwner()) {
+              commandCell = `<span class="cmd-toggle" data-cmd="${safeCommand}" data-visible="0">/********</span>`;
+            } else {
+              commandCell = `<span class="muted">[скрыта команда авторизации]</span>`;
+            }
+          } else {
+            commandCell = `<code>${keyword ? highlight(safeCommand, keyword) : safeCommand}</code>`;
+          }
+
+          return `
+            <tr>
+              <td class="muted">${date}</td>
+              <td>${keyword ? highlight(src, keyword) : src}</td>
+              <td>${
+                r.player_name
+                  ? `<span class="link-nick" data-player="${r.player_name}">${keyword ? highlight(r.player_name, keyword) : r.player_name}</span>`
+                  : ''
+              }</td>
+              <td>${commandCell}</td>
+              <td class="muted">${
+                r.ip
+                  ? `<span class="ip-toggle" data-ip="${r.ip}" data-visible="0">${keyword ? highlight('***.***.***.***', keyword) : '***.***.***.***'}</span>`
+                  : ''
+              }</td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    let playersCache = [];
+
+    function renderPlayers(list) {
+      const body = document.getElementById('playersBody');
+      body.innerHTML = list
+        .map(
+          (p) => `
+          <tr data-nickname="${p.nickname}">
+            <td>${p.id}</td>
+            <td>${p.nickname}</td>
+            <td class="muted">${formatDateTime(p.first_seen)}</td>
+            <td class="muted">${formatDateTime(p.last_seen)}</td>
+            <td class="muted">${
+              p.last_ip
+                ? `<span class="ip-toggle" data-ip="${p.last_ip}" data-visible="0">***.***.***.***</span>`
+                : ''
+            }</td>
+          </tr>
+        `
+        )
+        .join('');
+    }
+
+    async function loadPlayers() {
+      playersCache = await api('/api/players');
+      renderPlayers(playersCache);
+    }
+
+    let currentUser = null;
+    let editingUserId = null;
+
+    function isOwner() {
+      return currentUser && String(currentUser.role || '').toLowerCase() === 'owner';
+    }
+
+    async function loadUsers() {
+      try {
+        const users = await api('/api/admin/users');
+        const body = document.getElementById('usersBody');
+        const showActions = isOwner();
+        body.innerHTML = users
+          .map(
+            (u) => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>${u.role}</td>
+            <td class="muted">${formatDateTime(u.created_at)}</td>
+            <td>${showActions
+              ? (u.role !== 'owner'
+                ? `<button data-edit-user="${u.id}" data-edit-username="${u.username}" data-edit-role="${u.role}">Редактировать</button> <button data-delete-user="${u.id}" style="background:#b91c1c;margin-left:6px">Удалить</button>`
+                : `<button data-edit-user="${u.id}" data-edit-username="${u.username}" data-edit-role="${u.role}">Редактировать</button>`)
+              : '\u00A0'}
+            </td>
+          </tr>`
+          )
+          .join('');
+        const tbl = document.getElementById('usersTable');
+        if (tbl) tbl.classList.toggle('hide-actions', !showActions);
+      } catch (e) {
+        console.warn('Cannot load users:', e.message);
+      }
+    }
+
+    document.getElementById('reloadLogs').onclick = loadLogs;
+
+    document.getElementById('searchPlayerBtn').onclick = () => {
+      const q = document.getElementById('playerSearch').value.trim().toLowerCase();
+      if (!q) {
+        renderPlayers(playersCache);
+        return;
+      }
+      renderPlayers(playersCache.filter((p) => p.nickname.toLowerCase().includes(q)));
+    };
+
+    document.querySelectorAll('.nav-link').forEach((link) => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
+        link.classList.add('active');
+        const page = link.dataset.page;
+        document.getElementById('pageLogs').style.display = page === 'logs' ? 'block' : 'none';
+        document.getElementById('pagePlayers').style.display = page === 'players' ? 'block' : 'none';
+        document.getElementById('pageUsers').style.display = page === 'users' ? 'block' : 'none';
+        pageTitle.textContent =
+          page === 'logs' ? 'Логи' : page === 'players' ? 'Поиск игрока' : 'Пользователи';
+      });
+    });
+
+    // клик по нику в логах -> фильтр по игроку
+    document.getElementById('logsBody').addEventListener('click', (e) => {
+      const target = e.target.closest('[data-player]');
+      if (!target) return;
+      const nick = target.getAttribute('data-player');
+      if (!nick) return;
+      document.getElementById('filterPlayer').value = nick;
+      // переключаемся на вкладку "Логи"
+      document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
+      const logsLink = document.querySelector('.nav-link[data-page="logs"]');
+      if (logsLink) logsLink.classList.add('active');
+      document.getElementById('pageLogs').style.display = 'block';
+      document.getElementById('pagePlayers').style.display = 'none';
+      document.getElementById('pageUsers').style.display = 'none';
+      pageTitle.textContent = 'Логи';
+      loadLogs();
+    });
+
+    // клик по игроку в списке игроков -> открыть все его логи
+    document.getElementById('playersBody').addEventListener('click', (e) => {
+      const row = e.target.closest('tr[data-nickname]');
+      if (!row) return;
+      const nick = row.getAttribute('data-nickname');
+      if (!nick) return;
+      document.getElementById('filterPlayer').value = nick;
+      document.querySelector('.nav-link[data-page="logs"]')?.click();
+      loadLogs();
+    });
+
+    // показ/скрытие IP и команд логина по клику
+    document.addEventListener('click', (e) => {
+      const ipEl = e.target.closest('.ip-toggle');
+      if (ipEl) {
+        const ip = ipEl.getAttribute('data-ip') || '';
+        if (!ip) return;
+        const visible = ipEl.getAttribute('data-visible') === '1';
+        if (visible) {
+          ipEl.textContent = '***.***.***.***';
+          ipEl.setAttribute('data-visible', '0');
+        } else {
+          ipEl.textContent = ip;
+          ipEl.setAttribute('data-visible', '1');
+        }
+        return;
+      }
+
+      const cmdEl = e.target.closest('.cmd-toggle');
+      if (cmdEl) {
+        const cmd = cmdEl.getAttribute('data-cmd') || '';
+        const visible = cmdEl.getAttribute('data-visible') === '1';
+        if (visible) {
+          cmdEl.textContent = '/********';
+          cmdEl.setAttribute('data-visible', '0');
+        } else {
+          cmdEl.textContent = cmd;
+          cmdEl.setAttribute('data-visible', '1');
+        }
+      }
+    });
+
+    // ресайз колонок таблиц мышью (за видимую ручку справа)
+    function initColumnResize() {
+      document.querySelectorAll('table').forEach((table) => {
+        table.querySelectorAll('th').forEach((th) => {
+          const handle = th.querySelector('.col-resize-handle');
+          if (!handle) return;
+          handle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            const header = th;
+            const rect = header.getBoundingClientRect();
+            const startX = e.clientX;
+            const startWidth = rect.width;
+
+            const onMove = (ev) => {
+              const dx = ev.clientX - startX;
+              const newWidth = Math.max(60, startWidth + dx);
+              header.style.width = newWidth + 'px';
+            };
+
+            const onUp = () => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          });
+        });
+      });
+    }
+
+    // обработка кликов по пользователям (редактирование / удаление)
+    document.getElementById('usersBody').addEventListener('click', async (e) => {
+      if (!currentUser || currentUser.role !== 'owner') return;
+
+      const editBtn = e.target.closest('button[data-edit-user]');
+      if (editBtn) {
+        editingUserId = editBtn.getAttribute('data-edit-user');
+        const name = editBtn.getAttribute('data-edit-username');
+        const role = editBtn.getAttribute('data-edit-role');
+        document.getElementById('editUsername').value = name;
+        document.getElementById('editRole').value = role || 'user';
+        document.getElementById('editPassword').value = '';
+        document.getElementById('userEditMsg').style.display = 'none';
+        document.getElementById('userEditPanel').style.display = 'block';
+        return;
+      }
+
+      const delBtn = e.target.closest('button[data-delete-user]');
+      if (delBtn) {
+        const id = delBtn.getAttribute('data-delete-user');
+        if (!id) return;
+        const confirmDel = window.confirm('Удалить этого пользователя? Действие невозможно отменить.');
+        if (!confirmDel) return;
+        const msgEl = document.getElementById('userEditMsg');
+        msgEl.style.display = 'none';
+        try {
+          await api(`/api/admin/users/${id}`, { method: 'DELETE' });
+          await loadUsers();
+          if (editingUserId === id) {
+            editingUserId = null;
+            document.getElementById('userEditPanel').style.display = 'none';
+          }
+        } catch (err) {
+          msgEl.textContent = 'Ошибка удаления: ' + err.message;
+          msgEl.style.color = '#b91c1c';
+          msgEl.style.display = 'block';
+        }
+      }
+    });
+
+    document.getElementById('saveUserBtn').onclick = async () => {
+      const msgEl = document.getElementById('userEditMsg');
+      msgEl.style.display = 'none';
+      if (!editingUserId) return;
+      try {
+        const role = document.getElementById('editRole').value;
+        const password = document.getElementById('editPassword').value;
+        const body = { role };
+        if (password) body.password = password;
+        await api(`/api/admin/users/${editingUserId}`, {
+          method: 'PUT',
+          body: JSON.stringify(body)
+        });
+        await loadUsers();
+        msgEl.textContent = 'Сохранено';
+        msgEl.style.color = '#16a34a';
+        msgEl.style.display = 'block';
+      } catch (e) {
+        msgEl.textContent = 'Ошибка: ' + e.message;
+        msgEl.style.color = '#b91c1c';
+        msgEl.style.display = 'block';
+      }
+    };
+
+    updateAuthMode();
+    initColumnResize();
+    bootstrap();
+  </script>
+</body>
+</html>
+
