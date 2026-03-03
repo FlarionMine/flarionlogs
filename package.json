@@ -8,6 +8,9 @@
     "dev": "NODE_ENV=development node server.js",
     "init-db": "node scripts/init-db.js"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
