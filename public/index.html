@@ -225,6 +225,23 @@
       font-size: 12px;
       margin-bottom: 8px;
     }
+    .preset-filters {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: #4b5563;
+    }
+    .preset-filters label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .preset-filters input[type="checkbox"] {
+      cursor: pointer;
+    }
     @media (max-width: 900px) {
       body { flex-direction: column; }
       .sidebar { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }
@@ -323,30 +340,37 @@
         <section id="pageLogs">
           <div class="card">
             <h2>Логи команд</h2>
-          <div class="filters">
-            <input id="filterPlayer" placeholder="Игрок" />
-            <input id="filterKeyword" placeholder="Ключевое слово / время" style="min-width:180px" />
-            <select id="filterSource">
-              <option value="">Источник: все</option>
-              <option value="player">Игрок</option>
-              <option value="console">Консоль</option>
-            </select>
-            <button id="reloadLogs">Применить фильтры</button>
-          </div>
-          <div style="overflow:auto;max-height:1100px">
-            <table>
-              <thead>
-                <tr>
-                  <th>Дата<span class="col-resize-handle"></span></th>
-                  <th>Источник<span class="col-resize-handle"></span></th>
-                  <th>Игрок<span class="col-resize-handle"></span></th>
-                  <th>Команда<span class="col-resize-handle"></span></th>
-                  <th>IP<span class="col-resize-handle"></span></th>
-                </tr>
-              </thead>
-              <tbody id="logsBody"></tbody>
-            </table>
-          </div>
+            <div class="filters">
+              <input id="filterPlayer" placeholder="Игрок" />
+              <input id="filterKeyword" placeholder="Ключевое слово / время" style="min-width:180px" />
+              <select id="filterSource">
+                <option value="">Источник: все</option>
+                <option value="player">Игрок</option>
+                <option value="console">Консоль</option>
+              </select>
+              <button id="reloadLogs">Применить фильтры</button>
+            </div>
+            <div class="preset-filters">
+              <span class="muted" style="margin-right:4px">Готовые фильтры:</span>
+              <label><input type="checkbox" id="filterSec" /> Безопасность</label>
+              <label><input type="checkbox" id="filterEco" /> Экономика</label>
+              <label><input type="checkbox" id="filterPun" /> Наказания</label>
+            </div>
+            <div style="overflow:auto;height:1100px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Сервер<span class="col-resize-handle"></span></th>
+                    <th>Дата<span class="col-resize-handle"></span></th>
+                    <th>Источник<span class="col-resize-handle"></span></th>
+                    <th>Игрок<span class="col-resize-handle"></span></th>
+                    <th>Команда<span class="col-resize-handle"></span></th>
+                    <th>IP<span class="col-resize-handle"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="logsBody"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -421,6 +445,8 @@
   </main>
 
   <script>
+    const STORAGE_PAGE_KEY = 'flarion-logs-active-page';
+
     const authView = document.getElementById('authView');
     const appView = document.getElementById('appView');
     const authError = document.getElementById('authError');
@@ -471,6 +497,24 @@
       appView.style.display = 'none';
       currentUserEl.textContent = '';
       sidebarEl.style.display = 'none';
+      localStorage.removeItem(STORAGE_PAGE_KEY);
+    }
+
+    function setActivePage(page) {
+      document.querySelectorAll('.nav-link').forEach((l) => {
+        l.classList.toggle('active', l.dataset.page === page);
+      });
+      document.getElementById('pageLogs').style.display = page === 'logs' ? 'block' : 'none';
+      document.getElementById('pagePlayers').style.display = page === 'players' ? 'block' : 'none';
+      document.getElementById('pageUsers').style.display = page === 'users' ? 'block' : 'none';
+      pageTitle.textContent = page === 'logs' ? 'Логи' : page === 'players' ? 'Поиск игрока' : 'Пользователи';
+      localStorage.setItem(STORAGE_PAGE_KEY, page);
+    }
+
+    function applyPageFromStorage() {
+      const stored = localStorage.getItem(STORAGE_PAGE_KEY);
+      const page = stored === 'players' || stored === 'users' ? stored : 'logs';
+      setActivePage(page);
     }
 
     function showApp(me) {
@@ -484,6 +528,7 @@
       if (hasLogsAccess) {
         noAccessView.style.display = 'none';
         protectedView.style.display = 'block';
+        applyPageFromStorage();
         loadLogs();
         loadPlayers();
         loadUsers();
@@ -573,11 +618,41 @@
       const player = document.getElementById('filterPlayer').value.trim();
       const source = document.getElementById('filterSource').value;
       const keyword = document.getElementById('filterKeyword').value.trim();
+      const sec = document.getElementById('filterSec').checked;
+      const eco = document.getElementById('filterEco').checked;
+      const pun = document.getElementById('filterPun').checked;
       const params = new URLSearchParams();
       if (player) params.set('player', player);
       if (source) params.set('source', source);
       if (keyword) params.set('q', keyword);
-      const rows = await api('/api/logs?' + params.toString());
+      let rows = await api('/api/logs?' + params.toString());
+
+      const anyPreset = sec || eco || pun;
+      if (anyPreset) {
+        const secCmds = ['/login', '/l', '/register', '/reg'];
+        const ecoCmds = ['/pay', '/eco give', '/eco set', '/eco reset', '/eco take', '/points give', '/points giveall', '/points pay', '/points reset', '/points set', '/points take'];
+        const punCmds = ['/ban', '/kick', '/mute', '/tempban', '/tempmute', '/tempipban', '/banip', '/unban', '/warn', '/unwarn', '/unmute', '/jail', '/unjail'];
+
+        const matchesPreset = (r) => {
+          const src = (r.source || '').toLowerCase();
+          const cmd = (r.command || '').toLowerCase();
+
+          if (sec) {
+            if (src === 'player_join' || src === 'player_quit') return true;
+            if (secCmds.some((p) => cmd.startsWith(p))) return true;
+          }
+          if (eco) {
+            if (ecoCmds.some((p) => cmd.startsWith(p))) return true;
+          }
+          if (pun) {
+            if (punCmds.some((p) => cmd.startsWith(p))) return true;
+          }
+          return false;
+        };
+
+        rows = rows.filter(matchesPreset);
+      }
+
       const body = document.getElementById('logsBody');
       body.innerHTML = rows
         .map((r) => {
@@ -607,6 +682,7 @@
 
           return `
             <tr>
+              <td class="muted">grief-1</td>
               <td class="muted">${date}</td>
               <td>${keyword ? highlight(src, keyword) : src}</td>
               <td>${
@@ -691,6 +767,9 @@
     }
 
     document.getElementById('reloadLogs').onclick = loadLogs;
+    document.getElementById('filterSec').onchange = loadLogs;
+    document.getElementById('filterEco').onchange = loadLogs;
+    document.getElementById('filterPun').onchange = loadLogs;
 
     document.getElementById('searchPlayerBtn').onclick = () => {
       const q = document.getElementById('playerSearch').value.trim().toLowerCase();
@@ -703,14 +782,8 @@
 
     document.querySelectorAll('.nav-link').forEach((link) => {
       link.addEventListener('click', () => {
-        document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
-        link.classList.add('active');
         const page = link.dataset.page;
-        document.getElementById('pageLogs').style.display = page === 'logs' ? 'block' : 'none';
-        document.getElementById('pagePlayers').style.display = page === 'players' ? 'block' : 'none';
-        document.getElementById('pageUsers').style.display = page === 'users' ? 'block' : 'none';
-        pageTitle.textContent =
-          page === 'logs' ? 'Логи' : page === 'players' ? 'Поиск игрока' : 'Пользователи';
+        setActivePage(page);
       });
     });
 
@@ -722,13 +795,7 @@
       if (!nick) return;
       document.getElementById('filterPlayer').value = nick;
       // переключаемся на вкладку "Логи"
-      document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
-      const logsLink = document.querySelector('.nav-link[data-page="logs"]');
-      if (logsLink) logsLink.classList.add('active');
-      document.getElementById('pageLogs').style.display = 'block';
-      document.getElementById('pagePlayers').style.display = 'none';
-      document.getElementById('pageUsers').style.display = 'none';
-      pageTitle.textContent = 'Логи';
+      setActivePage('logs');
       loadLogs();
     });
 
@@ -739,7 +806,7 @@
       const nick = row.getAttribute('data-nickname');
       if (!nick) return;
       document.getElementById('filterPlayer').value = nick;
-      document.querySelector('.nav-link[data-page="logs"]')?.click();
+      setActivePage('logs');
       loadLogs();
     });
 
