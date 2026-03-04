@@ -237,8 +237,8 @@ app.get('/api/logs', requireRole('logs'), (req, res) => {
   }
   if (q) {
     const like = `%${q}%`;
-    where.push('(command LIKE ? OR result LIKE ? OR player_name LIKE ? OR ip LIKE ? OR ts LIKE ?)');
-    params.push(like, like, like, like, like);
+    where.push('(command LIKE ? OR result LIKE ? OR player_name LIKE ? OR ip LIKE ? OR ts LIKE ? OR source LIKE ?)');
+    params.push(like, like, like, like, like, like);
   }
 
   let sql = 'SELECT * FROM logs';
